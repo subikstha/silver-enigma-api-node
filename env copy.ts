@@ -3,15 +3,14 @@ import { z } from 'zod'
 
 process.env.APP_STAGE = process.env.APP_STAGE || 'dev'
 
-
 const isProduction = process.env.APP_STAGE === 'production'
 const isDevelopment = process.env.APP_STAGE === 'dev'
 const isTesting = process.env.APP_STAGE === 'test'
 
 if (isDevelopment) {
-  loadEnv() // This is going to load env from .env
+  loadEnv()
 } else if (isTesting) {
-  loadEnv('test') // This is going to load env from .env.test
+  loadEnv('test')
 }
 
 const envSchema = z.object({
@@ -29,20 +28,29 @@ const envSchema = z.object({
 })
 
 export type Env = z.infer<typeof envSchema>
-
 let env: Env
 
 try {
   env = envSchema.parse(process.env)
 } catch (e) {
   if (e instanceof z.ZodError) {
-    console.log('Invalid environment variables')
-    console.error(JSON.stringify(e.flatten().fieldErrors, null, 2)) // null, 2 is used for formatting
+    console.log('Invalid env var')
+    console.error(JSON.stringify(e.flatten().fieldErrors, null, 2))
 
-    e.errors.forEach((err) => {
+    e.issues.forEach((err) => {
       const path = err.path.join('.')
       console.log(`${path}: ${err.message}`)
     })
-    process.exit(1) // kill a server
+
+    process.exit(1)
   }
+
+  throw e
 }
+
+export const isProd = () => env.APP_STAGE === 'production'
+export const isDev = () => env.APP_STAGE === 'dev'
+export const isTest = () => env.APP_STAGE === 'test'
+
+export { env }
+export default env
