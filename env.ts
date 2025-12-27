@@ -22,10 +22,10 @@ const envSchema = z.object({
   APP_STAGE: z.enum(['dev', 'test', 'production']).default('dev'),
 
   PORT: z.coerce.number().positive().default(3000),
-  DATABASE_URL: z.string().startsWith('postgresql://'),
-  JWT_SECRET: z.string().min(32, 'Must be 32 chars long'),
-  JWT_EXPIRES_IN: z.string().default('7d'),
-  BCRYPT_ROUNDS: z.coerce.number().min(10).max(20).default(12),
+  // DATABASE_URL: z.string().startsWith('postgresql://'),
+  // JWT_SECRET: z.string().min(32, 'Must be 32 chars long'),
+  // JWT_EXPIRES_IN: z.string().default('7d'),
+  // BCRYPT_ROUNDS: z.coerce.number().min(10).max(20).default(12),
 })
 
 export type Env = z.infer<typeof envSchema>
@@ -39,10 +39,19 @@ try {
     console.log('Invalid environment variables')
     console.error(JSON.stringify(e.flatten().fieldErrors, null, 2)) // null, 2 is used for formatting
 
-    e.errors.forEach((err) => {
+    e.issues.forEach((err) => {
       const path = err.path.join('.')
       console.log(`${path}: ${err.message}`)
     })
-    process.exit(1) // kill a server
+    process.exit(1) // kill a server (1) means closed with error (0) means closed with no error
   }
+  throw e
 }
+
+export const isProd = () => env.APP_STAGE === 'production'
+export const isDev = () => env.APP_STAGE === 'dev'
+export const isTest = () => env.APP_STAGE === 'test'
+
+export { env }
+
+export default env
