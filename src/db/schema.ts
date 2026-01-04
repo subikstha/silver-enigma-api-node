@@ -1,5 +1,6 @@
 import { pgTable, uuid, text, timestamp, varchar, boolean, integer } from 'drizzle-orm/pg-core'
 import { relations } from 'drizzle-orm'
+import { createInsertSchema, createSelectSchema } from 'drizzle-zod'
 
 
 export const users = pgTable('users', {
@@ -46,3 +47,51 @@ export const habitTags = pgTable('habitTags', {
     habitId: uuid('habit_id').references(() => habits.id, { onDelete: 'cascade' }).notNull(),
     tagId: uuid('tag_id').references(() => tags.id, { onDelete: 'cascade' }).notNull(),
 })
+
+// Relations
+
+export const userRelations = relations(users, ({ many }) => ({
+    habits: many(habits)
+}))
+
+export const habitRelations = relations(habits, ({ one, many }) => ({
+    user: one(users, {
+        fields: [habits.userId],
+        references: [users.id]
+    }),
+    entries: many(entries),
+    habitTags: many(habitTags)
+}))
+
+export const entriesRelations = relations(entries, ({ one }) => ({
+    habit: one(habits, {
+        fields: [entries.habitId],
+        references: [habits.id]
+    })
+}))
+
+export const tagRelations = relations(tags, ({ many }) => ({
+    habitTags: many(habitTags)
+}))
+
+export const habitTagRelations = relations(habitTags, ({ one }) => ({
+    habit: one(habits, {
+        fields: [habitTags.habitId],
+        references: [habits.id]
+    }),
+    tag: one(tags, {
+        fields: [habitTags.tagId],
+        references: [tags.id]
+    })
+}))
+
+// Types
+
+export type User = typeof users.$inferSelect
+export type Habit = typeof habits.$inferSelect
+export type Entry = typeof entries.$inferSelect
+export type Tag = typeof tags.$inferSelect
+export type HabitTag = typeof habitTags.$inferSelect
+
+export const insertUserSchema = createInsertSchema(users)
+export const selectUserSchema = createSelectSchema(users)
